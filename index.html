@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ระบบบริหารคำร้องออนไลน์</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+
+<style>
+body{
+font-family:'Prompt',sans-serif;
+margin:0;
+background:linear-gradient(135deg,#667eea,#764ba2);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:15px;
+width:90%;
+max-width:1000px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h2{text-align:center}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+padding:10px;
+border:none;
+background:#667eea;
+color:white;
+border-radius:8px;
+cursor:pointer;
+}
+
+.hidden{display:none;}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th{background:#667eea;color:white;padding:10px;}
+td{padding:10px;border-bottom:1px solid #eee;}
+
+.pending{color:orange;}
+.approved{color:green;}
+.rejected{color:red;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="authBox">
+<h2>เข้าสู่ระบบ</h2>
+<input id="loginUser" placeholder="Username">
+<input id="loginPass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<h3>สมัครสมาชิก</h3>
+<input id="regUser" placeholder="Username">
+<input id="regPass" type="password" placeholder="Password">
+<select id="regRole">
+<option value="user">User</option>
+<option value="admin">Admin</option>
+</select>
+<button onclick="register()">Register</button>
+</div>
+
+<div id="userPage" class="hidden">
+<h2>หน้าผู้ใช้</h2>
+<input id="title" placeholder="หัวข้อคำร้อง">
+<textarea id="detail" placeholder="รายละเอียด"></textarea>
+<button onclick="submitRequest()">ส่งคำร้อง</button>
+<button onclick="logout()">ออกจากระบบ</button>
+</div>
+
+<div id="adminPage" class="hidden">
+<h2>หน้า Admin</h2>
+<table>
+<thead>
+<tr>
+<th>ผู้ยื่น</th>
+<th>หัวข้อ</th>
+<th>รายละเอียด</th>
+<th>สถานะ</th>
+<th>จัดการ</th>
+</tr>
+</thead>
+<tbody id="requestList"></tbody>
+</table>
+<button onclick="logout()">ออกจากระบบ</button>
+</div>
+
+</div>
+
+<script>
+
+function register(){
+let users=JSON.parse(localStorage.getItem("users"))||[];
+users.push({
+user:regUser.value,
+pass:regPass.value,
+role:regRole.value
+});
+localStorage.setItem("users",JSON.stringify(users));
+alert("สมัครสำเร็จ");
+}
+
+function login(){
+let users=JSON.parse(localStorage.getItem("users"))||[];
+let found=users.find(u=>u.user==loginUser.value && u.pass==loginPass.value);
+
+if(!found){alert("ไม่พบผู้ใช้");return;}
+
+authBox.classList.add("hidden");
+
+if(found.role=="user"){
+userPage.classList.remove("hidden");
+}else{
+adminPage.classList.remove("hidden");
+showRequests();
+}
+}
+
+function logout(){
+location.reload();
+}
+
+function submitRequest(){
+let requests=JSON.parse(localStorage.getItem("requests"))||[];
+requests.push({
+user:loginUser.value,
+title:title.value,
+detail:detail.value,
+status:"pending"
+});
+localStorage.setItem("requests",JSON.stringify(requests));
+alert("ส่งคำร้องแล้ว");
+}
+
+function showRequests(){
+let requests=JSON.parse(localStorage.getItem("requests"))||[];
+requestList.innerHTML="";
+
+requests.forEach((r,i)=>{
+let status=r.status=="pending"?"รอดำเนินการ":
+r.status=="approved"?"อนุมัติ":"ปฏิเสธ";
+
+requestList.innerHTML+=`
+<tr>
+<td>${r.user}</td>
+<td>${r.title}</td>
+<td>${r.detail}</td>
+<td class="${r.status}">${status}</td>
+<td>
+<button onclick="approve(${i})">อนุมัติ</button>
+<button onclick="reject(${i})">ปฏิเสธ</button>
+</td>
+</tr>`;
+});
+}
+
+function approve(i){
+let r=JSON.parse(localStorage.getItem("requests"));
+r[i].status="approved";
+localStorage.setItem("requests",JSON.stringify(r));
+showRequests();
+}
+
+function reject(i){
+let r=JSON.parse(localStorage.getItem("requests"));
+r[i].status="rejected";
+localStorage.setItem("requests",JSON.stringify(r));
+showRequests();
+}
+
+</script>
+
+</body>
+</html>
